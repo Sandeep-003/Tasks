@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: task-schedule-manager-api
+    env: node
+    rootDir: server
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: CLIENT_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: PORT
+        value: 5000
+  - type: static
+    name: task-schedule-manager-client
+    rootDir: client
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: task-schedule-manager-api
+          envVarKey: RENDER_EXTERNAL_URL
