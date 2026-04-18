@@ -2,6 +2,8 @@ import jwt from 'jsonwebtoken';
 
 const ACCESS_EXPIRES_IN = '15m';
 const REFRESH_EXPIRES_IN = '7d';
+const ACCESS_MINUTES = 15;
+const REFRESH_MINUTES = 7 * 24 * 60;
 
 export function signAccessToken(payload) {
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: ACCESS_EXPIRES_IN });
@@ -24,4 +26,25 @@ export function cookieOptions(minutesFromNow) {
     secure,
     maxAge,
   };
+}
+
+export function getAccessCookieOptions() {
+  return cookieOptions(ACCESS_MINUTES);
+}
+
+export function getRefreshCookieOptions() {
+  return cookieOptions(REFRESH_MINUTES);
+}
+
+export function getClearCookieOptions() {
+  const secure = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    sameSite: secure ? 'none' : 'lax',
+    secure,
+  };
+}
+
+export function getRefreshExpiryDate() {
+  return new Date(Date.now() + REFRESH_MINUTES * 60 * 1000);
 }

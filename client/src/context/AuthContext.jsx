@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import api from '../services/api.js';
+import { socket } from '../socket/index.js';
 
 const AuthContext = createContext(null);
 
@@ -10,7 +11,7 @@ export function AuthProvider({ children }) {
   const fetchMe = useCallback(async () => {
     try {
       const { data } = await api.get('/auth/me');
-      setUser(data.user);
+      setUser(data.user || null);
     } catch {
       setUser(null);
     } finally {
@@ -34,8 +35,20 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     await api.post('/auth/logout');
+    socket.disconnect();
     setUser(null);
   };
+
+  useEffect(() => {
+    if (!user) {
+      socket.disconnect();
+      return;
+    }
+    socket.connect();
+    return () => {
+      socket.disconnect();
+    };
+  }, [user]);
 
   return (
     <AuthContext.Provider value={{ user, loading, login, register, logout }}>

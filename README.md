@@ -1,60 +1,113 @@
 # Task Schedule Manager
 
-Production-grade full-stack Task Management application.
+Full-stack task management application with modular backend architecture, cookie-based JWT auth, and real-time task updates.
 
-- Frontend: React + Vite + TailwindCSS, Axios, Socket.IO client, Chart.js
-- Backend: Node.js + Express, Socket.IO, JWT, bcrypt, dotenv, pg (Postgres)
-- Deployment: Render monorepo (server web service + client static site)
+## Stack
 
-## Monorepo Structure
+- Frontend: React (Vite) + Tailwind CSS + Axios + Socket.IO client + Chart.js
+- Backend: Node.js + Express + PostgreSQL (`pg`) + Socket.IO
+- Auth: Access/refresh JWT in HTTP-only cookies with refresh token rotation
 
-- `client/` React SPA
-- `server/` Express API + Socket.IO
+## Architecture
 
-## Quick start
+### Backend layering
 
-1) Install dependencies (from project root run both installs):
+`Controller -> Service -> Repository -> DB`
+
+- `server/modules/auth`: auth flow (register/login/refresh/me/logout)
+- `server/modules/task`: task CRUD + pagination + status filtering + stats
+- `server/modules/user`: user data access
+- `server/middleware`: auth guard, role guard, centralized error handling
+- `server/socket`: user-room socket handler and event emitters
+- `server/utils`: logger, custom errors, jwt helpers, async handler
+
+### Frontend structure
+
+- `client/src/context/AuthContext.jsx`: auth state and session restore
+- `client/src/context/TaskContext.jsx`: task state, CRUD calls, realtime sync
+- `client/src/features/tasks`: task API + task UI components
+- `client/src/pages/Dashboard.jsx`: real task metrics (total/completed/pending)
+- `client/src/pages/Tasks.jsx`: full task management UI
+
+## API overview
+
+### Auth routes
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/refresh`
+- `GET /api/auth/me`
+- `POST /api/auth/logout`
+
+### Task routes (authenticated)
+
+- `GET /api/tasks?page=1&limit=10&status=todo`
+- `GET /api/tasks/stats`
+- `POST /api/tasks`
+- `PATCH /api/tasks/:taskId`
+- `DELETE /api/tasks/:taskId`
+
+### Health route
+
+- `GET /api/health`
+
+## Local development
+
+### 1) Install dependencies
 
 ```powershell
-# Backend
 cd server; npm install; cd ..
-# Frontend
 cd client; npm install; cd ..
 ```
 
-2) Configure environment variables:
-- Copy `server/.env.example` to `server/.env` and set values.
-- Optionally, copy `client/.env.example` to `client/.env` to override API base URL.
+### 2) Configure env files
 
-3) Create database schema (run on your Postgres instance):
-- Execute `server/schema.sql`.
+- Copy `server/.env.example` -> `server/.env`
+- Copy `client/.env.example` -> `client/.env` (optional in local)
 
-4) Run locally:
+### 3) Create database schema
+
+Run `server/schema.sql` on your PostgreSQL database.
+
+### 4) Run app
+
 ```powershell
-# Terminal 1: API
+# Terminal 1
 cd server; npm run dev
-# Terminal 2: Client
+
+# Terminal 2
 cd client; npm run dev
 ```
-- Client dev server: http://localhost:5173
-- API server: http://localhost:5000
 
-## Authentication
-- HTTP-only cookies carry access and refresh tokens.
-- Endpoints:
-  - POST `/api/auth/register`
-  - POST `/api/auth/login`
-  - GET  `/api/auth/me`
-  - POST `/api/auth/refresh`
-  - POST `/api/auth/logout`
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:5000`
 
-## Deployment (Render)
-See `render.yaml` for monorepo configuration (one Web Service for `server/`, one Static Site for `client/`).
+## Database notes
+
+- Uses UUID primary keys (`gen_random_uuid()` via `pgcrypto` extension)
+- Task statuses: `todo`, `in-progress`, `done`
+- Indexed fields: `tasks.user_id`, `tasks.status`, `tasks(user_id, status)`
+
+## Production deployment on AWS
+
+Use the dedicated guide:
+
+- `AWS_DEPLOYMENT_GUIDE.md`
+
+Support files used by the guide:
+
+- `server/Dockerfile`
+- `deploy/aws/ecs-task-definition.template.json`
 
 ## Scripts
-- `server`: `npm run dev` starts nodemon; `npm start` runs production
-- `client`: `npm run dev`, `npm run build`, `npm run preview`
 
-## Notes
-- Tasks CRUD and real-time events: to be implemented after auth.
-- Use `server/schema.sql` to create tables (users, sessions, tasks).
+### Server
+
+- `npm run dev`: run with nodemon
+- `npm start`: run production server
+
+### Client
+
+- `npm run dev`: run Vite dev server
+- `npm run build`: production build
+- `npm run preview`: preview production build

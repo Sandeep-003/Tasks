@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { getApiErrorMessage } from '../utils/apiError.js';
 
 export default function Register() {
   const [name, setName] = useState('');
@@ -17,7 +18,7 @@ export default function Register() {
       await register(name, email, password);
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(getApiErrorMessage(err, 'Registration failed'));
     }
   };
 
